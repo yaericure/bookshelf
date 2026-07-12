@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>導讀書架</title>
+<script>
+  const saved = localStorage.getItem("theme");
+  if (saved === "dark" || (!saved && matchMedia("(prefers-color-scheme: dark)").matches)) {
+    document.documentElement.classList.add("dark");
+  }
+</script>
+<style>
+:root {
+  --bg: #fafaf9; --surface: #ffffff; --ink: #1c1917; --ink-2: #57534e;
+  --ink-3: #a8a29e; --line: #e7e5e4; --chip: #f5f5f4;
+}
+html.dark {
+  --bg: #161615; --surface: #201f1e; --ink: #eceae8; --ink-2: #b8b3ae;
+  --ink-3: #7c7772; --line: #35322f; --chip: #2a2827;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+  line-height: 1.7;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.4rem 5rem; }
+
+header { padding: 3.6rem 0 1rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+h1 { font-size: 2.1rem; font-weight: 800; letter-spacing: .12em; }
+.sub { margin-top: .4rem; color: var(--ink-2); font-size: .95rem; max-width: 34em; }
+.rainbow {
+  height: 6px; border-radius: 3px; margin: 1.2rem 0 2rem;
+  background: linear-gradient(90deg,#ec4899,#f97316,#f59e0b,#eab308,#22c55e,#10b981,#14b8a6,#06b6d4,#6366f1,#8b5cf6,#a855f7,#d946ef,#f43f5e,#ef4444);
+}
+#themeBtn {
+  flex-shrink: 0; margin-top: .5rem; border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink-2); border-radius: 10px; padding: .45em .8em; cursor: pointer; font-size: .85rem;
+}
+#themeBtn:hover { color: var(--ink); }
+
+.chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
+.chip {
+  border: 1px solid var(--line); background: var(--chip); color: var(--ink-2);
+  border-radius: 999px; padding: .3em 1em; cursor: pointer; font-size: .85rem;
+}
+.chip.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+section h2 {
+  font-size: .85rem; letter-spacing: .3em; color: var(--ink-3);
+  margin: 2.2rem 0 1rem; font-weight: 600;
+}
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+
+a.card {
+  display: block; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; padding: 1.1rem 1.2rem 1rem; text-decoration: none; color: var(--ink);
+  border-top: 4px solid var(--accent); transition: transform .15s, box-shadow .15s;
+}
+a.card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.10); }
+.card .title { font-weight: 700; font-size: 1.02rem; line-height: 1.45; }
+.card .author { margin-top: .35rem; color: var(--ink-2); font-size: .82rem; }
+.card .meta { margin-top: .8rem; display: flex; align-items: center; justify-content: space-between; }
+.card .units { font-size: .75rem; color: var(--ink-3); }
+.card .dot { width: 10px; height: 10px; border-radius: 999px; background: var(--accent); }
+
+footer { margin-top: 3.5rem; font-size: .78rem; color: var(--ink-3); line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>導讀書架</h1>
+      <p class="sub">14 本書的教學導讀站:每站含重點速覽、核心概念、深入解說與思考題。內容皆為改寫導讀,非原書全文,完整內容請支持正版。</p>
+    </div>
+    <button id="themeBtn" aria-label="切換深淺色">🌓 深淺色</button>
+  </header>
+  <div class="rainbow"></div>
+
+  <div class="chips" id="chips">
+    <button class="chip active" data-cat="all">全部</button>
+    <button class="chip" data-cat="invest">投資交易</button>
+    <button class="chip" data-cat="think">思維與習慣</button>
+    <button class="chip" data-cat="character">故事與品格</button>
+  </div>
+
+  <div id="shelf"></div>
+
+  <footer>
+    本書架與各導讀站僅供學習交流;各書著作權屬原作者與出版社所有。<br>
+    以 Vite + React + Tailwind 建置(本頁為靜態索引),原始碼見各站頂欄的 GitHub 連結。
+  </footer>
+</div>
+
+<script>
+const books = [
+  { t:"灰階思考", a:"謝孟恭", u:19, c:"#ec4899", s:"grey-scale-thinking", cat:"invest" },
+  { t:"華爾街幽靈的禮物", a:"亞瑟・李・辛普森", u:18, c:"#f97316", s:"phantoms-gift", cat:"invest" },
+  { t:"頂尖操盤手的養成計畫 1", a:"約翰・派伯", u:23, c:"#ef4444", s:"trader-training-1", cat:"invest" },
+  { t:"頂尖操盤手的養成計畫 2", a:"約翰・派伯", u:24, c:"#f43f5e", s:"trader-training-2", cat:"invest" },
+  { t:"走進我的交易室", a:"亞歷山大・埃爾德", u:14, c:"#eab308", s:"come-into-my-trading-room", cat:"invest" },
+  { t:"炒股的智慧", a:"陳江挺", u:14, c:"#6366f1", s:"wisdom-of-stock-trading", cat:"invest" },
+  { t:"韭菜的自我修養", a:"李笑來", u:14, c:"#8b5cf6", s:"leek-self-cultivation", cat:"invest" },
+  { t:"財富自由之路", a:"李笑來", u:19, c:"#06b6d4", s:"road-to-financial-freedom", cat:"invest" },
+  { t:"原子習慣", a:"詹姆斯・克利爾", u:22, c:"#10b981", s:"atomic-habits", cat:"think" },
+  { t:"子彈思考整理術", a:"瑞德・卡洛", u:20, c:"#f59e0b", s:"bullet-journal-method", cat:"think" },
+  { t:"貪婪的多巴胺", a:"丹尼爾・利伯曼、麥可・朗", u:16, c:"#22c55e", s:"molecule-of-more", cat:"think" },
+  { t:"底層邏輯", a:"劉潤", u:21, c:"#d946ef", s:"underlying-logic", cat:"think" },
+  { t:"The Power of Story", a:"Jim Loehr", u:13, c:"#14b8a6", s:"power-of-story", cat:"character" },
+  { t:"The Only Way to Win", a:"Jim Loehr", u:11, c:"#a855f7", s:"only-way-to-win", cat:"character" },
+];
+const CATS = { invest:"投資交易", think:"思維與習慣", character:"故事與品格" };
+
+function render(filter) {
+  const shelf = document.getElementById("shelf");
+  shelf.innerHTML = "";
+  const cats = filter === "all" ? Object.keys(CATS) : [filter];
+  for (const cat of cats) {
+    const items = books.filter(b => b.cat === cat);
+    if (!items.length) continue;
+    const sec = document.createElement("section");
+    sec.innerHTML = `<h2>${CATS[cat]}</h2>`;
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    for (const b of items) {
+      const a = document.createElement("a");
+      a.className = "card";
+      a.href = `https://yaericure.github.io/${b.s}/`;
+      a.style.setProperty("--accent", b.c);
+      a.innerHTML = `<div class="title">${b.t}</div>
+        <div class="author">${b.a}</div>
+        <div class="meta"><span class="units">${b.u} 個單元</span><span class="dot"></span></div>`;
+      grid.appendChild(a);
+    }
+    sec.appendChild(grid);
+    shelf.appendChild(sec);
+  }
+}
+render("all");
+
+document.getElementById("chips").addEventListener("click", (e) => {
+  const btn = e.target.closest(".chip");
+  if (!btn) return;
+  document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+  btn.classList.add("active");
+  render(btn.dataset.cat);
+});
+
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const dark = document.documentElement.classList.toggle("dark");
+  localStorage.setItem("theme", dark ? "dark" : "light");
+});
+</script>
+</body>
+</html>
